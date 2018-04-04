@@ -1,0 +1,66 @@
+Streaming ADC readout to serial port on 'denode' smart dust mote
+
+The application StreamADCToSerial starts an ADC stream read operation using the ReadStream interface. The application switches buffers between the ADC and serial forwarder components. If either of the components returns with any errors at any time the stream is stopped and StreamADCToSerial goes idle. This should be indicated by a led (yellow?) being switched on. Only mote restart will start another stream forwarding. There are no graceful restarts or attempts to save erroneously ending calls, because that would complicate things significantly. 
+
+StreamADCToSerial has been confirmed to forward ADC readouts for ~10 minute periods successfully. There is no reason to suspect that it would fail on longer runs, although the probability of error grows over time. 
+
+!NB! 
+During a test run to read 2457600 samples (approx. ~10minutes) with a between-sample period of 256 microseconds it was noted, that the clock drift (jitter, whatever) was ~0.5 seconds. A standard TinyOS millisecond timer stamped the beginning of the read stream call and the end of read and the difference was 0.5 seconds from the expected duration of the read operation. This would indicate that the ReadStream interface actually does not guarantee the between-sample period it is set with.
+
+In order to use StreamADCToSerial some modifications to standard TinyOS components have to be made. Standard TinyOS serial forwarding uses frame delimiters, CRC and has a limited frame length. These have to be disabled or circled around to ensure a clean ADC stream without any additional bytes. Make a backup copy of SerialP.nc and HdlcTranslateC.nc, then open the originals not the backup copies.
+
+In SerialP.nc:
+
+1. Find the lines
+						/* OK, start transmitting ! */
+								atomic { 
+								  txCRC = 0;
+								  txByteCnt = 0;
+								  txState = TXSTATE_PROTO; 
+								}
+								if (call SerialFrameComm.putDelimiter() != SUCCESS) {
+								  atomic txState = TXSTATE_ERROR; 
+								  MaybeScheduleTx();
+								}
+							 }
+and change 'txState = TXSTATE_PROTO;' to 'txState = TXSTATE_INFO;'. This skips the frame delimiter and protocol byte that TinyOS usually prefix to serial frames.
+
+2. A little further down find 
+						 if (txIndex == TX_DATA_INDEX){
+							uint8_t nextByte;
+							nextByte = signal SendBytePacket.nextByte();
+							if (txBuf[txIndex].state == BUFFER_COMPLETE || txByteCnt >= SERIAL_MTU){
+						txState = TXSTATE_FCS1;
+
+change 'txState = TXSTATE_FCS1;' to 'txState = TXSTATE_ENDFLAG;'. This skips the frame delimiter at the end of the frame. Also comment out the '|| txByteCnt >= SERIAL_MTU' part to use frames with infinite length 'if (txBuf[txIndex].state == BUFFER_COMPLETE /*want to send more bytes! || txByteCnt >= SERIAL_MTU*/){'. Another possibility is to change the value of 'SERIAL_MTU', but as soon as txByteCnt reaches 'SERIAL_MTU' value the frame is done and forwarding is stopped. Also note that txByteCnt is 8 bit, so numbers above 256 will never be reached.
+
+In HdlcTranslateC.nc,
+
+3. Escape bytes must be circled around. Find
+						  async command error_t SerialFrameComm.putDelimiter() {
+							 atomic {
+								state.sendEscape = 0;
+								m_data = HDLC_FLAG_BYTE;
+							 }
+							 return call UartStream.send(&m_data, 1);
+						  }
+						  
+						  async command error_t SerialFrameComm.putData(uint8_t data) {
+							 if (data == HDLC_CTLESC_BYTE || data == HDLC_FLAG_BYTE) {
+								state.sendEscape = 1;
+								txTemp = data ^ 0x20;
+								m_data = HDLC_CTLESC_BYTE;
+							 }
+Change 'return call UartStream.send(&m_data, 1);' to 'return post delimiterDummy();//call UartStream.send(&m_data, 1);'. Create a dummy delimiter return task:
+						  task void delimiterDummy() {
+							 signal SerialFrameComm.putDone();
+						  } 
+Change 'if (data == HDLC_CTLESC_BYTE || data == HDLC_FLAG_BYTE)' to 'if (0)//data == HDLC_CTLESC_BYTE || data == HDLC_FLAG_BYTE)' so no escape bytes are used. 
+
+Also note that denode (Atmega128rfa1) uses little endian system, so everything that is received over serial in hex probably has to be converted to big endian.
+
+jpnevulator is a tool to read serial port into a file or smt.
+
+LittleEndian16bitHexToDecimalConverter.cpp is a short strip of code to convert little endian hex to decimal values. Have a look inside before compiling.
+
+
