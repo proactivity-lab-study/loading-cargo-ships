@@ -18,6 +18,7 @@ implementation
 {
 	uint32_t counter = 0;
 	uint8_t ship_cmd[MAX_SHIPS];
+	uint8_t ship_ID[MAX_SHIPS];
 
 	uint8_t cCraneX = DEFAULT_LOC, cCraneY = DEFAULT_LOC;
 	bool wasCargoPlaced = FALSE, doUpdate = TRUE;
@@ -35,7 +36,7 @@ implementation
 
 	event void CraneLink.craneLocation(uint8_t location_x, uint8_t location_y, bool cargoPlaced)
 	{
-		uint8_t i;
+		uint8_t i, k=0;
 		locBundle loc;
 
 		cCraneX = location_x;
@@ -53,7 +54,14 @@ implementation
 			}
 			else //check for everybody else
 			{
-
+				if(call KnowledgeLink.getShipsInGame(ship_ID, &k) == SUCCESS)for(i=0;i<k;i++)
+				{
+					loc = call KnowledgeLink.getShipLocation(ship_ID[k]);
+					if(loc.x_coordinate == location_x && loc.y_coordinate == location_y)
+					{
+						call KnowledgeLink.cargoWasPlacedHere(loc);
+					}
+				}
 			}
 		}
 
