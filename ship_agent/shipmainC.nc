@@ -46,22 +46,22 @@ implementation
     //------- CRANE STRATEGY
     components CraneControlP;
     components new TimerMilliC() as Timer2;
-    components new TimerMilliC() as Timer3;
     components new KDBUserC(unique(UQ_KNOWLEDGE_DB_USER)) as KDB_CraneControl;
     CraneControlP.CraneLink -> CraneCommunicationP;
     CraneControlP.KnowledgeLink -> KDB_CraneControl;
     CraneControlP.Leds -> LedsC;
     CraneControlP.Timer -> Timer2;
-    CraneControlP.Timer2 -> Timer3;
 
 
     //------- SHIP-SHIP STRATEGY
     components ShipControlP;
+    components new TimerMilliC() as Timer3;
     components new KDBUserC(unique(UQ_KNOWLEDGE_DB_USER)) as KDB_ShipControl;
     ShipControlP.KnowledgeLink -> KDB_ShipControl;
     ShipControlP.Leds -> LedsC;
     ShipControlP.StdControl <- shipmainP.Ship;
     ShipControlP.StrategyImpl -> CraneControlP;
+    ShipControlP.Timer -> Timer3;
 }
 
 
