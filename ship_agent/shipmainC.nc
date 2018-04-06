@@ -61,6 +61,7 @@ implementation
     ShipControlP.KnowledgeLink -> KDB_ShipControl;
     ShipControlP.Leds -> LedsC;
     ShipControlP.StdControl <- shipmainP.Ship;
+    ShipControlP.StrategyImpl -> CraneControlP;
 }
 
 

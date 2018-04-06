@@ -18,7 +18,10 @@ implementation
         if (err == SUCCESS)
         {
             //ship agent must start by sending a welcome message
-            call SendWelcomeMsg.start();            
+            call SendWelcomeMsg.start();
+
+            //start the strategy motor
+            call Ship.start();           
         }
         else call AMControl.start();
     }
