@@ -95,10 +95,10 @@ implementation
 				else 
 				{
 					index = getIndex(rmsg->shipID);
-					if(index >= MAX_SHIPS && index >= 0)
+					if(index >= MAX_SHIPS)
 					{
 						index = getEmptySlot();
-						if(index >= MAX_SHIPS && index >= 0)break; //fall out of switch() because no more room for another ship
+						if(index >= MAX_SHIPS)break; //fall out of switch() because no more room for another ship
 					}
 					
 					ship_kb[index].shipID = rmsg->shipID;
@@ -122,7 +122,7 @@ implementation
 			if(index >= MAX_SHIPS)//this is a ship we were not waiting for
 			{
 				index = getEmptySlot();
-				if(index >= MAX_SHIPS && index >= 0)
+				if(index >= MAX_SHIPS)
 				{
 					//this break breaks more than just the switch() loop, and update is not resolved
 					//if(updateInProgress)
