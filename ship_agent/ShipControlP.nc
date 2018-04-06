@@ -4,6 +4,7 @@ module ShipControlP
 	uses interface Leds;
 	uses interface StrategyImpl;
 	uses interface Timer<TMilli>;
+	uses interface Timer<TMilli> as Timer2;
 	provides interface StdControl;
 }
 implementation
@@ -16,7 +17,7 @@ implementation
 	command error_t StdControl.start()
 	{
 		//start a strategy
-		myStrategy();
+		call Timer2.startPeriodic(2000);
 
 		//start periodic KnowledgeCenter updates
 		call Timer.startOneShot(DATABASE_UPDATE_INTERVAL);
@@ -30,7 +31,10 @@ implementation
 		call StrategyImpl.empty();
 	}
 
-	
+	event void Timer2.fired()
+	{
+		myStrategy();
+	}
 
 
 

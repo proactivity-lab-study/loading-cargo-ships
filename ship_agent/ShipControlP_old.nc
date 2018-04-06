@@ -4,6 +4,7 @@ module ShipControlP
 	uses interface Leds;
 	uses interface StrategyImpl;
 	uses interface Timer<TMilli>;
+	uses interface Timer<TMilli> as Timer2;
 	provides interface StdControl;
 }
 implementation
@@ -29,7 +30,7 @@ implementation
 	{
 		//select a strategy
 
-		strategyToMe();
+		call Timer2.startPeriodic(5000);
 		//strategyNearestToCrane();
 		//strategyNearestToMe();
 		//strategyFollowShip();
@@ -49,7 +50,11 @@ implementation
 
 	command error_t StdControl.stop(){return FAIL;}
 
-
+	event void Timer2.fired()
+	{
+		strategyToMe();
+	}
+	
 	void strategyToMe()
 	{
 		call StrategyImpl.goToDestination(call KnowledgeLink.getMyLocation());

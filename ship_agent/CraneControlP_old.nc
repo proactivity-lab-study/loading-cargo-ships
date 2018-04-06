@@ -372,4 +372,9 @@ implementation
 		//new crane commands from other ships cause reevaluation of our crane command when using strategy 'popular' or 'parrot'
 		if(strategy == SS_POPULAR && strategy == SS_PARROT)call Timer.startOneShot(WAIT_SOME_TIME);
 	}
+
+	event void KnowledgeLink.updateDone(error_t err)
+	{
+		
+	}
 }

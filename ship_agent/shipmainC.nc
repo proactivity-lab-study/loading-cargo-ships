@@ -56,12 +56,14 @@ implementation
     //------- SHIP-SHIP STRATEGY
     components ShipControlP;
     components new TimerMilliC() as Timer3;
+    components new TimerMilliC() as Timer4;
     components new KDBUserC(unique(UQ_KNOWLEDGE_DB_USER)) as KDB_ShipControl;
     ShipControlP.KnowledgeLink -> KDB_ShipControl;
     ShipControlP.Leds -> LedsC;
     ShipControlP.StdControl <- shipmainP.Ship;
     ShipControlP.StrategyImpl -> CraneControlP;
     ShipControlP.Timer -> Timer3;
+    ShipControlP.Timer2 -> Timer4;
 }
 
 
