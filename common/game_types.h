@@ -44,6 +44,6 @@
 #define DEFAULT_TIME 60
 #define MAX_SHIPS 10 //maximum number of ships in knowledge database and game
 
-
+#define CRANE_UPDATE_INTERVAL 3000UL //milliseconds
 
 #endif //GAME_TYPES_H

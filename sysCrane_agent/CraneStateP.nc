@@ -12,7 +12,6 @@ module CraneStateP
 }
 implementation
 {
-	#define CRANE_UPDATE_INTERVAL 3000UL //seconds
 	#define MAXLEN_SERIAL_BUF 20
 
 
