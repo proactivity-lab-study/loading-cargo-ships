@@ -10,6 +10,29 @@
 /************************************************************
  *	Radio message structures
  ************************************************************/
+//-------- SHIP MESSAGE STRUCTURES
+
+typedef nx_struct shipTargetProposal {
+	nx_uint8_t messageID;
+	nx_uint8_t senderID;
+	nx_uint8_t targetID;
+} craneLocationMsg;
+
+//propose next command to send to crane
+typedef nx_struct shipMoveProposal {
+	nx_uint8_t messageID;
+	nx_uint8_t senderID;
+	nx_uint8_t cmd;//command
+} craneCommandMsg;
+
+//propose next command to send to crane
+typedef nx_struct shipProposalResponse {
+	nx_uint8_t messageID;
+	nx_uint8_t senderID;
+	nx_uint8_t approved; //0 - not agreed, >1 - agreed
+} craneCommandMsg;
+
+
 
 //-------- CRANE MESSAGE STRUCTURES
 

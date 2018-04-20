@@ -18,6 +18,10 @@
 #define AS_QRMSG 124		//0x7C          //response for query of all ship IDs of ships in the game
 #define ACARGO_QRMSG 125	//0x7D          //response for query of cargo status of all ships in the game
 
+#define SHIP_TARGET_PROPOSAL_MSG 131
+#define SHIP_MOVE_PROPOSAL_MSG 132
+#define SHIP_PROPOSAL_RESPONSE_MSG 135
+
 //-------- SERIAL MESSAGE_TYPES
 #define SERIAL_CRANE_LOCMSG 1
 #define SERIAL_NEWSHIP_MSG 2
