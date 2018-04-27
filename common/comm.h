@@ -5,6 +5,7 @@
 
 #define AM_CRANECOMMUNICATION 6
 #define AM_SYSTEMCOMMUNICATION 7
+#define AM_SHIPCOMMUNICATION 8
 
 
 /************************************************************
@@ -16,23 +17,21 @@ typedef nx_struct shipTargetProposal {
 	nx_uint8_t messageID;
 	nx_uint8_t senderID;
 	nx_uint8_t targetID;
-} craneLocationMsg;
+} shipTargetProposal;
 
 //propose next command to send to crane
 typedef nx_struct shipMoveProposal {
 	nx_uint8_t messageID;
 	nx_uint8_t senderID;
 	nx_uint8_t cmd;//command
-} craneCommandMsg;
+} shipMoveProposal;
 
 //propose next command to send to crane
 typedef nx_struct shipProposalResponse {
 	nx_uint8_t messageID;
 	nx_uint8_t senderID;
 	nx_uint8_t approved; //0 - not agreed, >1 - agreed
-} craneCommandMsg;
-
-
+} shipProposalResponse;
 
 //-------- CRANE MESSAGE STRUCTURES
 

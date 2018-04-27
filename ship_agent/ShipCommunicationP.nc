@@ -6,6 +6,7 @@ module ShipCommunicationP
 	uses interface Packet;
 	uses interface AMSend;
 	uses interface Receive;
+	uses interface Leds;
 	provides interface ShipLink;
 }
 implementation 
@@ -15,6 +16,9 @@ implementation
 	 ************************************************************/
 	message_t pkt;
 	bool busy = FALSE;
+
+	//for receive
+	uint8_t tpsID, tptID, mpsID, mpcmd, rsID, ra;
 
 	command error_t ShipLink.targetProposal(uint8_t target_id, uint8_t ship_id)
 	{
@@ -60,6 +64,30 @@ implementation
 		else return EBUSY;
 	}
 
+	command error_t ShipLink.sendResponse(uint8_t shipID, bool approved)
+	{
+		if (!busy)
+		{
+			shipProposalResponse* prpMsg = (shipProposalResponse*)(call Packet.getPayload(&pkt, sizeof(shipProposalResponse)));
+			if (prpMsg == NULL)
+			{
+				return FAIL;
+			}
+			prpMsg->messageID = SHIP_PROPOSAL_RESPONSE_MSG;
+			prpMsg->senderID = TOS_NODE_ID;
+			if(approved)prpMsg->approved = 1;
+			else prpMsg->approved = 0;
+
+			if(call AMSend.send(shipID, &pkt, sizeof(shipProposalResponse)) == SUCCESS)
+			{
+				busy = TRUE;
+				return SUCCESS;
+			}
+			return FAIL;
+		}
+		else return EBUSY;
+	}
+
 	event void AMSend.sendDone(message_t* msg, error_t err)
 	{
 		if (&pkt == msg) 
@@ -71,44 +99,76 @@ implementation
 	/************************************************************
 	 *	Receive messages
 	 ************************************************************/
-	
-	event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len)
+	task void targetProp()
 	{
-		/*
-		uint8_t location_x;
-		uint8_t location_y;
-		bool cargoPlaced = FALSE;
-		uint8_t shipID;
-		uint8_t cmd;
-	
-		if (len == sizeof(craneLocationMsg))
-		{
-			craneLocationMsg* locMsg = (craneLocationMsg*)payload;
-			if(locMsg->messageID == CRANE_LOCATION_MSG && locMsg->senderID == CRANE_ID)
-			{
-				location_x = locMsg->x_coordinate;
-				location_y = locMsg->y_coordinate;
-				if(locMsg->cargoPlaced != 0)cargoPlaced = TRUE;
-
-				signal CraneLink.craneLocation(location_x, location_y, cargoPlaced);
-			}
-		}
-		else if (len == sizeof(craneCommandMsg))
-		{
-			craneCommandMsg* cmdMsg = (craneCommandMsg*)payload;
-			if(cmdMsg->messageID == CRANE_COMMAND_MSG)
-			{
-				shipID = cmdMsg->senderID;
-				cmd = cmdMsg->cmd;
-
-				signal CraneLink.craneCommandFrom(shipID, cmd);
-			}
-		}
-		else ;
-		return msg;
-		*/
+		signal ShipLink.targetProposalFrom(tpsID, tptID);
 	}
 
-	//default event void CraneLink.craneLocation(uint8_t loc_x, uint8_t loc_y, uint8_t cPlaced){}
-	//default event void CraneLink.craneCommandFrom(uint8_t sID, uint8_t c){}
+	task void moveProp()
+	{
+		signal ShipLink.moveProposalFrom(mpsID, mpcmd);
+	}
+
+	task void respMsg()
+	{
+		if(ra != 0)signal ShipLink.responseFrom(rsID, TRUE);
+		else signal ShipLink.responseFrom(rsID, FALSE);
+	}
+
+	event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len)
+	{
+		uint8_t msgID;
+		//target propsal, move proposal and response messages are all 3 bytes long
+		if (len == 3)
+		{
+			msgID = *(uint8_t*)payload;
+			if(msgID == SHIP_TARGET_PROPOSAL_MSG)
+			{
+				shipTargetProposal* rmsg = (shipTargetProposal*)payload;
+
+				//check again to be sure
+				if(rmsg->messageID == SHIP_TARGET_PROPOSAL_MSG)
+				{
+					//signal ShipControlP but do it split-phase
+					tpsID = rmsg->senderID;
+					tptID = rmsg->targetID;
+					post targetProp();
+				}
+			}
+			else if(msgID == SHIP_MOVE_PROPOSAL_MSG)
+			{
+				shipMoveProposal* rmsg = (shipMoveProposal*)payload;
+
+				//check again to be sure
+				if(rmsg->messageID == SHIP_MOVE_PROPOSAL_MSG)
+				{
+					//signal ShipControlP
+					mpsID = rmsg->senderID;
+					mpcmd = rmsg->cmd;
+					post moveProp();
+				}
+			}
+			else if(msgID == SHIP_PROPOSAL_RESPONSE_MSG)
+			{
+				shipProposalResponse* rmsg = (shipProposalResponse*)payload;
+
+				//check again to be sure
+				if(rmsg->messageID == SHIP_PROPOSAL_RESPONSE_MSG)
+				{
+					//signal ShipControlP
+					rsID = rmsg->senderID;
+					ra = rmsg->approved;
+					post respMsg();
+				}
+			}
+			else ;//must be some other type of message with len == 3
+		}
+		else ;//must be some other type of message
+
+		return msg;
+	}
+
+	default event void ShipLink.targetProposalFrom(uint8_t shipID, uint8_t targetID){}
+	default event void ShipLink.moveProposalFrom(uint8_t shipID, uint8_t cmd){}
+	default event void ShipLink.responseFrom(uint8_t shipID, bool approved){}
 }

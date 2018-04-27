@@ -26,6 +26,15 @@ implementation
     CraneCommunicationP.AMSend -> CSenderC;
     CraneCommunicationP.Receive -> CReceiverC;
 
+    //------- SHIP SEND-RECEIVE
+    components new AMSenderC(AM_SHIPCOMMUNICATION) as ShipSenderC;
+    components new AMReceiverC(AM_SHIPCOMMUNICATION) as ShipReceiverC;
+    components ShipCommunicationP;
+    ShipCommunicationP.Packet -> ShipSenderC;
+    ShipCommunicationP.AMSend -> ShipSenderC;
+    ShipCommunicationP.Receive -> ShipReceiverC;
+    ShipCommunicationP.Leds -> LedsC;
+
     //------- SYSTEM SEND-RECEIVE
     components new AMSenderC(AM_SYSTEMCOMMUNICATION) as SSenderC;
     components new AMReceiverC(AM_SYSTEMCOMMUNICATION) as SReceiverC;
@@ -57,13 +66,16 @@ implementation
     components ShipControlP;
     components new TimerMilliC() as Timer3;
     components new TimerMilliC() as Timer4;
+    components new TimerMilliC() as Timer5;
     components new KDBUserC(unique(UQ_KNOWLEDGE_DB_USER)) as KDB_ShipControl;
     ShipControlP.KnowledgeLink -> KDB_ShipControl;
     ShipControlP.Leds -> LedsC;
     ShipControlP.StdControl <- shipmainP.Ship;
     ShipControlP.StrategyImpl -> CraneControlP;
-    ShipControlP.Timer -> Timer3;
-    ShipControlP.Timer2 -> Timer4;
+    ShipControlP.KBUpdateTimer -> Timer3;
+    ShipControlP.StratEvalTimer -> Timer4;
+    ShipControlP.ProposalTimeout -> Timer5;
+    ShipControlP.ShipLink -> ShipCommunicationP;
 }
 
 
